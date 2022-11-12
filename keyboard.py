@@ -22,7 +22,7 @@ from playsound import playsound
 
 # Constants (Parameters)
 STARTINGMUTATERATE = 0.0001
-MINSTARTINGFITNESS = 32.1
+MINSTARTINGFITNESS = 32.2
 GENS = 50000
 
 # Region for the "DO NOT MODIFY" section
@@ -437,7 +437,7 @@ def getInitialPopulation(popSize: int) -> Population:
     attempt = 1
     foundBestAttempt = 1
     bestFitness = 100
-    bigPopSize = popSize * 100
+    bigPopSize = popSize * 10
 
     while True:
         startingPop = initPop(bigPopSize)
