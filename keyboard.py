@@ -19,7 +19,12 @@ import json
 # Run the following command as written for the proper version of 'playsound':
 # pip install playsound==1.2.2
 # Un-comment the line below and all lines that contain 'playsound' if you want sounds:
-# from playsound import playsound
+from playsound import playsound
+
+# Constants (Parameters)
+STARTINGMUTATIONRATE = 0.0001
+MINSTARTINGFITNESS = 32.1
+GENERATIONS = 50000
 
 # Region for the "DO NOT MODIFY" section
 # region
@@ -423,70 +428,31 @@ def survivor_select(individuals: Population, pop_size: int) -> Population:
     return individuals[:pop_size]
 
 
-def evolve(example_genome: str, pop_size: int = 500) -> Population:
+def getInitialPopulation(popSize: int) -> Population:
     """
-    Purpose:        A whole EC run, main driver
-    Parameters:     The number of individuals in a population
-    User Input:     No
-    Prints:         Updates every time fitness switches.
-    Returns:        Population
-    Modifies:       Various data structures
-    Calls:          Basic python, all your functions
+    Create randomized populations until finding one with a fitness of 30 or less before continuing.
+    The idea is to cast a very wide net, land on a 'hill' not discovered yet (30 fitness or less without evolving),
+    and continue from there in the hopes of having found a different, better local optima.
     """
 
-    # Initialization/Parameter Tuning
-    # region
-    # Constants (Parameters)
-    STARTINGMUTATIONRATE = 0.0001
-    MINSTARTINGFITNESS = 36  # 32.1 is best found so far
-    RECORDFITNESS = 23.96163738532014
-    DESIREDFITNESS = 24.1
-    GENOMESIZE = len(example_genome)
-    GENERATIONS = 50000
-
-    currPop = initialize_pop(pop_size)
-    evaluate_group(currPop)
-    rank_group(currPop)
-    bestFitness = 9999999999
     attempt = 1
     foundBestAttempt = 1
-    mutationRate = STARTINGMUTATIONRATE
-    sprinkle = initialize_pop(1)[0]
-    seededInvividual = Individual(genome="", fitness=0)
-    inputGenome = ""
-    # endregion
+    bestFitness = 100
 
-    # User-Inputed Genome
-    # Un-comment this if you want to use a manually seeded genome.
-    # region
-    # if inputGenome == '':
-    #     pass
-    # elif sorted(example_genome) != sorted(inputGenome):
-    #     print("INVALID SEED STRING!!!")
-    #     exit()
-    # else:
-    #     seededInvividual["genome"] = inputGenome
-    #     currPop[0] = seededInvividual
-    # endregion
-
-    # Create randomized populations until finding one with a fitness of 30 or less before continuing.
-    # The idea is to cast a very wide net, land on a 'hill' not discovered yet (30 fitness or less without evolving),
-    # and continue from there in the hopes of having found a different, better local optima.
-    # region
     while True:
-        currPop = initialize_pop(pop_size)
-        evaluate_group(currPop)
-        rank_group(currPop)
+        startingPop = initialize_pop(popSize)
+        evaluate_group(startingPop)
+        rank_group(startingPop)
 
-        if currPop[0]["fitness"] < bestFitness:
-            bestFitness = currPop[0]["fitness"]
+        if startingPop[0]["fitness"] < bestFitness:
+            bestFitness = startingPop[0]["fitness"]
             foundBestAttempt = attempt
-            # playsound("sounds/0small.mp3")
+            playsound("sounds/tinyImprovement.mp3")
             print("New Best Starting Fitness Found on Attempt {}:".format(attempt))
             print(str(bestFitness) + "\n")
 
-        if currPop[0]["fitness"] < MINSTARTINGFITNESS:
-            # playsound("sounds/1medium.mp3")
+        if startingPop[0]["fitness"] < MINSTARTINGFITNESS:
+            playsound("sounds/hitMinFitness.mp3")
             print("FOUND THE GOOD STUFF!!!")
             print("Moving on to standard evolution.\n")
             break
@@ -500,6 +466,53 @@ def evolve(example_genome: str, pop_size: int = 500) -> Population:
             )
 
         attempt += 1
+    return startingPop
+
+
+def getBestEverKeyboard() -> Individual:
+    # Record past best ever keyboard
+    bestEverKeyboard = Individual(genome="", fitness=100)
+
+    with open(file="best_ever.txt", mode="r") as f:
+        bestEverKeyboard["genome"] = f.readlines()[0]
+
+    evaluate_individual(bestEverKeyboard)
+    return bestEverKeyboard
+
+
+def evolve(example_genome: str, pop_size: int = 500) -> Population:
+    """
+    Purpose:        A whole EC run, main driver
+    Parameters:     The number of individuals in a population
+    User Input:     No
+    Prints:         Updates every time fitness switches.
+    Returns:        Population
+    Modifies:       Various data structures
+    Calls:          Basic python, all your functions
+    """
+
+    # Initialization/Parameter Tuning
+    # region
+    GENOMESIZE = len(example_genome)
+
+    currPop = getInitialPopulation(pop_size)
+    bestFitness = currPop[0]["fitness"]
+    mutationRate = STARTINGMUTATIONRATE
+    sprinkle = initialize_pop(1)[0]
+    seededInvividual = Individual(genome="", fitness=0)
+    bestEverKeyboard = getBestEverKeyboard()
+    # endregion
+
+    # User-Inputed Genome
+    # region
+    if seededInvividual["genome"] == "":
+        pass
+    elif sorted(example_genome) != sorted(seededInvividual["genome"]):
+        print("INVALID SEED STRING!!!")
+        exit()
+    else:
+        currPop[-1] = seededInvividual
+        evaluate_group(currPop)
     # endregion
 
     # The main evolution engine
@@ -510,7 +523,7 @@ def evolve(example_genome: str, pop_size: int = 500) -> Population:
         currPop[-1] = sprinkle
 
         if gen % 1000 == 0:
-            # playsound("sounds/2large.mp3")
+            playsound("sounds/1000Generations.mp3")
             print("Generation {} Mutation rate:{}".format(gen, mutationRate))
             sprinkle = initialize_pop(1)[0]
 
@@ -530,17 +543,23 @@ def evolve(example_genome: str, pop_size: int = 500) -> Population:
         if currPop[0]["fitness"] < bestFitness:
             bestFitness = currPop[0]["fitness"]
             mutationRate = STARTINGMUTATIONRATE
-            # playsound("sounds/0small.mp3")
+            playsound("sounds/tinyImprovement.mp3")
             print("New Best Fitness Found on Generation {}:".format(gen))
             print(bestFitness)
 
-            if bestFitness <= DESIREDFITNESS:
-                # playsound("sounds/hitDesiredFitness.mp3")
-                # Remove the break if you're not testing for the grade
-                break
+            if bestFitness == bestEverKeyboard["fitness"]:
+                playsound("sounds/hitRecordFitness.mp3")
 
-            if bestFitness < RECORDFITNESS:
-                # playsound("sounds/3brokenRecord.mp3")
+            if bestFitness < bestEverKeyboard["fitness"]:
+                # Write the data of the new best keyboard in the file
+                with open(file="best_ever.txt", mode="w") as f:
+                    f.write(currPop[0]["genome"] + "\n")
+                    f.write(str(currPop[0]["fitness"]))
+
+                # Copy new bestEverKeyboard for future comparisons in this run
+                bestEverKeyboard = currPop[0]
+
+                playsound("sounds/brokeRecordFitness.mp3")
                 print("BROKEN RECORD!!!")
         else:
             mutationRate = min(0.9999, max(0.0001, mutationRate + 0.0000025))
