@@ -22,9 +22,9 @@ import json
 from playsound import playsound
 
 # Constants (Parameters)
-STARTINGMUTATIONRATE = 0.0001
+STARTINGMUTATERATE = 0.0001
 MINSTARTINGFITNESS = 32.1
-GENERATIONS = 50000
+GENS = 50000
 
 # Region for the "DO NOT MODIFY" section
 # region
@@ -109,7 +109,7 @@ def print_keyboard(individual: Individual) -> None:
 # endregion
 
 
-def initialize_individual(genome: str, fitness: int) -> Individual:
+def initIndividual(genome: str, fitness: int) -> Individual:
     """
     Purpose:        Create one individual
     Parameters:     genome as string, fitness as integer (higher better)
@@ -123,7 +123,7 @@ def initialize_individual(genome: str, fitness: int) -> Individual:
     return Individual(genome=genome, fitness=fitness)
 
 
-def initialize_pop(pop_size: int) -> Population:
+def ititPop(pop_size: int) -> Population:
     """
     Purpose:        Create a randomized population to evolve
     Parameters:     Population size as int
@@ -153,7 +153,7 @@ def mapFunction(index: int, c1NewSegment: list[str], c2NewSegment: list[str]) ->
     return mapFunction(index, c1NewSegment, c2NewSegment)
 
 
-def recombine_pair(
+def recombinePair(
     parent1: Individual, parent2: Individual, GENOMESIZE: int
 ) -> Population:
     """
@@ -206,7 +206,7 @@ def recombine_pair(
         exit()
 
 
-def recombine_group(
+def recombineGroup(
     parents: Population, recombine_rate: float, GENOMESIZE: int
 ) -> Population:
     """
@@ -227,12 +227,12 @@ def recombine_group(
         if not random.random() < recombine_rate:
             newPop.extend([p1, p2])
         else:
-            newPop.extend(recombine_pair(p1, p2, GENOMESIZE))
+            newPop.extend(recombinePair(p1, p2, GENOMESIZE))
 
     return newPop
 
 
-def mutate_individual(
+def mutateIndividual(
     parent: Individual, mutate_rate: float, GENOMESIZE: int
 ) -> Individual:
     """
@@ -256,7 +256,7 @@ def mutate_individual(
     return result
 
 
-def mutate_group(
+def mutateGroup(
     children: Population, mutate_rate: float, GENOMESIZE: int
 ) -> Population:
     """
@@ -271,7 +271,7 @@ def mutate_group(
     """
     newPop = Population()
     for child in children:
-        newPop.append(mutate_individual(child, mutate_rate, GENOMESIZE=GENOMESIZE))
+        newPop.append(mutateIndividual(child, mutate_rate, GENOMESIZE=GENOMESIZE))
     return newPop
 
 
@@ -341,7 +341,7 @@ def evaluate_individual(individual: Individual) -> None:
 # endregion
 
 
-def evaluate_group(individuals: Population) -> None:
+def evalGroup(individuals: Population) -> None:
     """
     Purpose:        Computes and modifies the fitness for population
     Parameters:     Objective string, Population
@@ -356,7 +356,7 @@ def evaluate_group(individuals: Population) -> None:
         evaluate_individual(individual)
 
 
-def rank_group(individuals: Population) -> None:
+def rankGroup(individuals: Population) -> None:
     """
     Purpose:        Create one individual
     Parameters:     Population of Individuals
@@ -390,7 +390,7 @@ def weightedSampleWithoutReplacement(
     return [population[i] for i in indices]
 
 
-def parent_select(individuals: Population, number: int) -> Population:
+def parentSelect(individuals: Population, number: int) -> Population:
     """
     Purpose:        Choose parents in direct probability to their fitness
     Parameters:     Population, the number of individuals to pick.
@@ -413,7 +413,7 @@ def parent_select(individuals: Population, number: int) -> Population:
     return weightedSampleWithoutReplacement(individuals, weights, number)
 
 
-def survivor_select(individuals: Population, pop_size: int) -> Population:
+def survivorSelect(individuals: Population, pop_size: int) -> Population:
     """
     Purpose:        Picks who gets to live!
     Parameters:     Population, and population size to return.
@@ -424,7 +424,7 @@ def survivor_select(individuals: Population, pop_size: int) -> Population:
     Calls:          ?
     Example doctest:
     """
-    rank_group(individuals)
+    rankGroup(individuals)
     return individuals[:pop_size]
 
 
@@ -440,9 +440,9 @@ def getInitialPopulation(popSize: int) -> Population:
     bestFitness = 100
 
     while True:
-        startingPop = initialize_pop(popSize)
-        evaluate_group(startingPop)
-        rank_group(startingPop)
+        startingPop = ititPop(popSize)
+        evalGroup(startingPop)
+        rankGroup(startingPop)
 
         if startingPop[0]["fitness"] < bestFitness:
             bestFitness = startingPop[0]["fitness"]
@@ -480,7 +480,7 @@ def getBestEverKeyboard() -> Individual:
     return bestEverKeyboard
 
 
-def evolve(example_genome: str, pop_size: int = 500) -> Population:
+def evolve(exampleGenome: str, popSize: int = 500) -> Population:
     """
     Purpose:        A whole EC run, main driver
     Parameters:     The number of individuals in a population
@@ -493,64 +493,65 @@ def evolve(example_genome: str, pop_size: int = 500) -> Population:
 
     # Initialization/Parameter Tuning
     # region
-    GENOMESIZE = len(example_genome)
+    GENOMESIZE = len(exampleGenome)
 
-    currPop = getInitialPopulation(pop_size)
-    bestFitness = currPop[0]["fitness"]
-    mutationRate = STARTINGMUTATIONRATE
-    sprinkle = initialize_pop(1)[0]
-    seededInvividual = Individual(genome="", fitness=0)
+    currPop = getInitialPopulation(popSize)
+    bestFitnessThisRun = currPop[0]["fitness"]
+    mutateRate = STARTINGMUTATERATE
+    sprinkle = ititPop(1)[0]
+    seedInvividual = Individual(genome="", fitness=0)
     bestEverKeyboard = getBestEverKeyboard()
     # endregion
 
-    # User-Inputed Genome
+    # User-Inputed 'Seed' Genome
     # region
-    if seededInvividual["genome"] == "":
+    if seedInvividual["genome"] == "":
         pass
-    elif sorted(example_genome) != sorted(seededInvividual["genome"]):
+    elif sorted(exampleGenome) != sorted(seedInvividual["genome"]):
         print("INVALID SEED STRING!!!")
         exit()
     else:
-        currPop[-1] = seededInvividual
-        evaluate_group(currPop)
+        currPop[-1] = seedInvividual
+        evalGroup(currPop)
     # endregion
 
     # The main evolution engine
     # region
-    for gen in range(GENERATIONS):
+    for gen in range(GENS):
 
         # Sprinkle
         currPop[-1] = sprinkle
 
+        # Every 1000 generations, give an update to the user and change sprinkle
         if gen % 1000 == 0:
             playsound("sounds/1000Generations.mp3")
-            print("Generation {} Mutation rate:{}".format(gen, mutationRate))
-            sprinkle = initialize_pop(1)[0]
+            print("Generation {} Mutation rate:{}".format(gen, mutateRate))
+            sprinkle = ititPop(1)[0]
 
         # Main parent -> offspring -> mutation -> survivor cycle
         # region
-        parents = parent_select(currPop, pop_size // 2)
-        childPop = recombine_group(parents, 0.75, GENOMESIZE)
-        parents = parent_select(currPop, pop_size // 2)
-        childPop.extend(recombine_group(parents, 1, GENOMESIZE))
-        currPop.extend(mutate_group(childPop, mutationRate, GENOMESIZE))
-        evaluate_group(currPop)
-        rank_group(currPop)
-        currPop = survivor_select(currPop, len(currPop) // 2)
+        parents = parentSelect(currPop, popSize // 2)
+        childPop = recombineGroup(parents, 0.75, GENOMESIZE)
+        parents = parentSelect(currPop, popSize // 2)
+        childPop.extend(recombineGroup(parents, 1, GENOMESIZE))
+        currPop.extend(mutateGroup(childPop, mutateRate, GENOMESIZE))
+        evalGroup(currPop)
+        rankGroup(currPop)
+        currPop = survivorSelect(currPop, len(currPop) // 2)
         # endregion
 
-        # Check for better fitness and adjust mutation rate
-        if currPop[0]["fitness"] < bestFitness:
-            bestFitness = currPop[0]["fitness"]
-            mutationRate = STARTINGMUTATIONRATE
+        # Check for better fitness, record new best if necessary, and adjust mutation rate
+        if currPop[0]["fitness"] < bestFitnessThisRun:
+            bestFitnessThisRun = currPop[0]["fitness"]
+            mutateRate = STARTINGMUTATERATE
             playsound("sounds/tinyImprovement.mp3")
             print("New Best Fitness Found on Generation {}:".format(gen))
-            print(bestFitness)
+            print(bestFitnessThisRun)
 
-            if bestFitness == bestEverKeyboard["fitness"]:
+            if bestFitnessThisRun == bestEverKeyboard["fitness"]:
                 playsound("sounds/hitRecordFitness.mp3")
 
-            if bestFitness < bestEverKeyboard["fitness"]:
+            if bestFitnessThisRun < bestEverKeyboard["fitness"]:
                 # Write the data of the new best keyboard in the file
                 with open(file="best_ever.txt", mode="w") as f:
                     f.write(currPop[0]["genome"] + "\n")
@@ -562,15 +563,12 @@ def evolve(example_genome: str, pop_size: int = 500) -> Population:
                 playsound("sounds/brokeRecordFitness.mp3")
                 print("BROKEN RECORD!!!")
         else:
-            mutationRate = min(0.9999, max(0.0001, mutationRate + 0.0000025))
+            mutateRate = min(0.9999, max(0.0001, mutateRate + 0.0000025))
     # endregion
 
     return currPop
 
 
-# Seed for base grade.
-# For the exploratory competition points (last 10),
-# comment this one line out if you want, but put it back please.
 seed = False
 
 # Region for the "DO NOT MODIFY" section
@@ -638,7 +636,7 @@ if __name__ == "__main__":
 
     print(divider)
     input("Press any key to start")
-    population = evolve(example_genome=DVORAK)
+    population = evolve(exampleGenome=DVORAK)
 
     print("Here is the best layout:")
     print_keyboard(population[0])
