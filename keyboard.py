@@ -16,9 +16,21 @@ from typing import TypedDict
 import math
 import json
 
+# Run the following commands for proper module installation:
+# pip install --upgrade setuptools pip wheel
+# pip install nvidia-pyindex
+# pip install nvidia-cuda-runtime-cu11
+# pip install cuda-python
+# pip install cudatoolkit
+# pip install numba
+from numba import jit, cuda
+import numpy as np
+
+# To measure execution time
+from timeit import default_timer as timer
+
 # Run the following command as written for the proper version of 'playsound':
 # pip install playsound==1.2.2
-# Un-comment the line below and all lines that contain 'playsound' if you want sounds:
 from playsound import playsound
 
 # Constants (Parameters)
@@ -438,9 +450,10 @@ def getInitialPopulation(popSize: int) -> Population:
     attempt = 1
     foundBestAttempt = 1
     bestFitness = 100
+    bigPopSize = popSize * 100
 
     while True:
-        startingPop = ititPop(popSize)
+        startingPop = ititPop(bigPopSize)
         evalGroup(startingPop)
         rankGroup(startingPop)
 
@@ -464,8 +477,11 @@ def getInitialPopulation(popSize: int) -> Population:
                     bestFitness, foundBestAttempt
                 )
             )
+            playsound("sounds/1000Generations.mp3")
 
         attempt += 1
+
+    startingPop = survivorSelect(startingPop, popSize)
     return startingPop
 
 
@@ -541,6 +557,7 @@ def evolve(exampleGenome: str, popSize: int = 500) -> Population:
         # endregion
 
         # Check for better fitness, record new best if necessary, and adjust mutation rate
+        # region
         if currPop[0]["fitness"] < bestFitnessThisRun:
             bestFitnessThisRun = currPop[0]["fitness"]
             mutateRate = STARTINGMUTATERATE
@@ -564,6 +581,7 @@ def evolve(exampleGenome: str, popSize: int = 500) -> Population:
                 print("BROKEN RECORD!!!")
         else:
             mutateRate = min(0.9999, max(0.0001, mutateRate + 0.0000025))
+        # endregion
     # endregion
 
     return currPop
