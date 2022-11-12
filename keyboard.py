@@ -135,7 +135,7 @@ def initIndividual(genome: str, fitness: int) -> Individual:
     return Individual(genome=genome, fitness=fitness)
 
 
-def ititPop(pop_size: int) -> Population:
+def initPop(popSize: int) -> Population:
     """
     Purpose:        Create a randomized population to evolve
     Parameters:     Population size as int
@@ -148,7 +148,27 @@ def ititPop(pop_size: int) -> Population:
     """
     result = []
     keys = DVORAK
-    for _ in range(pop_size):
+    for _ in range(popSize):
+        keys = "".join(random.sample(keys, len(keys)))
+        result.append(Individual(genome=keys, fitness=0))
+    return result
+
+
+@jit(target_backend="cuda")
+def initPopTest(popSize: int) -> Population:
+    """
+    Purpose:        Create a randomized population to evolve
+    Parameters:     Population size as int
+    User Input:     no
+    Prints:         no
+    Returns:        a population, as a list of Individuals
+    Modifies:       Nothing
+    Calls:          ?
+    Example doctest:
+    """
+    result = []
+    keys = DVORAK
+    for _ in range(popSize):
         keys = "".join(random.sample(keys, len(keys)))
         result.append(Individual(genome=keys, fitness=0))
     return result
@@ -453,7 +473,7 @@ def getInitialPopulation(popSize: int) -> Population:
     bigPopSize = popSize * 100
 
     while True:
-        startingPop = ititPop(bigPopSize)
+        startingPop = initPopTest(bigPopSize)
         evalGroup(startingPop)
         rankGroup(startingPop)
 
@@ -514,7 +534,7 @@ def evolve(exampleGenome: str, popSize: int = 500) -> Population:
     currPop = getInitialPopulation(popSize)
     bestFitnessThisRun = currPop[0]["fitness"]
     mutateRate = STARTINGMUTATERATE
-    sprinkle = ititPop(1)[0]
+    sprinkle = initPop(1)[0]
     seedInvividual = Individual(genome="", fitness=0)
     bestEverKeyboard = getBestEverKeyboard()
     # endregion
@@ -542,7 +562,7 @@ def evolve(exampleGenome: str, popSize: int = 500) -> Population:
         if gen % 1000 == 0:
             playsound("sounds/1000Generations.mp3")
             print("Generation {} Mutation rate:{}".format(gen, mutateRate))
-            sprinkle = ititPop(1)[0]
+            sprinkle = initPop(1)[0]
 
         # Main parent -> offspring -> mutation -> survivor cycle
         # region
