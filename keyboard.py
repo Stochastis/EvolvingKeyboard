@@ -16,19 +16,6 @@ from typing import TypedDict
 import math
 import json
 
-# Run the following commands for proper module installation:
-# pip install --upgrade setuptools pip wheel
-# pip install nvidia-pyindex
-# pip install nvidia-cuda-runtime-cu11
-# pip install cuda-python
-# pip install cudatoolkit
-# pip install numba
-from numba import jit, cuda
-import numpy as np
-
-# To measure execution time
-from timeit import default_timer as timer
-
 # Run the following command as written for the proper version of 'playsound':
 # pip install playsound==1.2.2
 from playsound import playsound
@@ -136,26 +123,6 @@ def initIndividual(genome: str, fitness: int) -> Individual:
 
 
 def initPop(popSize: int) -> Population:
-    """
-    Purpose:        Create a randomized population to evolve
-    Parameters:     Population size as int
-    User Input:     no
-    Prints:         no
-    Returns:        a population, as a list of Individuals
-    Modifies:       Nothing
-    Calls:          ?
-    Example doctest:
-    """
-    result = []
-    keys = DVORAK
-    for _ in range(popSize):
-        keys = "".join(random.sample(keys, len(keys)))
-        result.append(Individual(genome=keys, fitness=0))
-    return result
-
-
-@jit(target_backend="cuda")
-def initPopTest(popSize: int) -> Population:
     """
     Purpose:        Create a randomized population to evolve
     Parameters:     Population size as int
@@ -473,7 +440,7 @@ def getInitialPopulation(popSize: int) -> Population:
     bigPopSize = popSize * 100
 
     while True:
-        startingPop = initPopTest(bigPopSize)
+        startingPop = initPop(bigPopSize)
         evalGroup(startingPop)
         rankGroup(startingPop)
 
